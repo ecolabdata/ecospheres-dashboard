@@ -1,1 +1,2 @@
 apache-superset
+psycopg2-binary
