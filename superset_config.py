@@ -18,11 +18,3 @@ CACHE_CONFIG = {
     "CACHE_REDIS_URL": REDIS_URL,
 }
 DATA_CACHE_CONFIG = CACHE_CONFIG
-
-# does not work
-# HTTP_HEADERS = {'X-Frame-Options': 'ALLOWALL'}
-# OVERRIDE_HTTP_HEADERS = {'X-Frame-Options': 'ALLOWALL'}
-
-# FIXME: move this in reverse proxy
-# disable talisman to disable restrictive X-Frame-Options
-TALISMAN_ENABLED = False
