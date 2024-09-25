@@ -92,7 +92,8 @@ def delete_old_backups(bucket_name, s3_client, days_to_keep=7):
             obj_age = (datetime.now(obj_last_modified.tzinfo) - obj_last_modified).days
 
             # If the backup is older than the specified number of days, mark it for deletion
-            if obj_age > days_to_keep:
+            # FIXME:
+            if obj_age >= days_to_keep:
                 objects_to_delete.append({"Key": obj_key})
 
         if objects_to_delete:
