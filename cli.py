@@ -60,7 +60,7 @@ def create_database_dump(dsn):
         dump_file_path = Path(temp_dir) / "database_dump.sql"
 
         # Execute pg_dump command
-        command = f"pg_dumpall -Fc '{dsn}' | gzip > {dump_file_path}"
+        command = f"pg_dumpall '{dsn}' | gzip > {dump_file_path}"
         subprocess.run(command, shell=True, check=True)
 
         return temp_dir, dump_file_path
