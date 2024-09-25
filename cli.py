@@ -41,12 +41,6 @@ def list_bucket_contents(bucket_name: str = BUCKET_NAME):
         print(obj["Key"])
 
 
-@cli
-def upload_dummy_file():
-    file_path = Path("/Users/alexandre/Captures d'écran/Capture d’écran 2024-09-25 à 16.36.03.png")
-    upload_file(file_path, BUCKET_NAME, "dashboard/aaa--bbb.sql.gz")
-
-
 def upload_file(local_file_path: Path, bucket_name: str, object_key: str) -> bool:
     s3_client = connect_to_s3()
     s3_client.upload_file(local_file_path, bucket_name, object_key)
