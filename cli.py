@@ -7,34 +7,37 @@ from datetime import datetime
 from pathlib import Path
 
 import boto3
-from botocore.exceptions import NoCredentialsError
+import sentry_sdk
+
+from minicli import cli, run
+
+if sentry_dsn := os.getenv("SENTRY_DSN"):
+    sentry_sdk.init(dsn=sentry_dsn)
 
 # thoses databases will be backuped and uploaded to S3
-DATABASES = {
-    "dashboard": os.getenv("DATABASE_URL"),
-    "dashboard_backend": os.getenv("DOKKU_POSTGRES_AQUA_URL"),
+DATABASES: dict[str, str] = {
+    "dashboard": os.getenv("DATABASE_URL", ""),
+    "dashboard_backend": os.getenv("DOKKU_POSTGRES_AQUA_URL", ""),
 }
-BUCKET_NAME = "ecospheres-backups"
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+BUCKET_NAME: str = "ecospheres-backups"
+
 
 def connect_to_s3():
-    try:
-        s3 = boto3.client(
-            "s3",
-            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-            region_name="nl-ams",
-            endpoint_url="https://s3.nl-ams.scw.cloud",
-        )
-        print("Connected to S3 bucket")
-        return s3
-    except NoCredentialsError:
-        print("Invalid credentials")
-        return None
+    s3 = boto3.client(
+        "s3",
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        region_name="nl-ams",
+        endpoint_url="https://s3.nl-ams.scw.cloud",
+    )
+    print("Connected to S3 bucket")
+    return s3
 
 
-def list_bucket_contents(bucket_name, s3_client):
+@cli
+def list_bucket_contents(bucket_name: str = BUCKET_NAME):
     try:
+        s3_client = connect_to_s3()
         response = s3_client.list_objects_v2(Bucket=bucket_name)
         print(f"Contents of {bucket_name}:")
         for obj in response.get("Contents", []):
@@ -43,17 +46,16 @@ def list_bucket_contents(bucket_name, s3_client):
         print(f"An error occurred while listing bucket contents: {str(e)}")
 
 
-def upload_file(local_file_path, bucket_name, object_key, s3_client):
+def upload_file(local_file_path: Path, bucket_name: str, object_key: str) -> None:
     try:
-        # Upload the file
+        s3_client = connect_to_s3()
         s3_client.upload_file(local_file_path, bucket_name, object_key)
         print("File uploaded successfully")
-        return True
     except Exception as e:
         print(f"An error occurred during upload: {str(e)}")
 
 
-def create_database_dump(dsn):
+def create_database_dump(dsn: str) -> tuple[str | None, Path | None]:
     try:
         # Create a temporary directory for the dump file
         temp_dir = tempfile.mkdtemp()
@@ -71,7 +73,8 @@ def create_database_dump(dsn):
         print(f"An unexpected error occurred: {str(e)}")
         return None, None
 
-def cleanup_temp_directory(temp_dir):
+
+def cleanup_temp_directory(temp_dir: str):
     try:
         shutil.rmtree(temp_dir)
         print("Temporary directory cleaned up successfully")
@@ -79,8 +82,10 @@ def cleanup_temp_directory(temp_dir):
         print(f"Failed to clean up temporary directory: {str(e)}")
 
 
-def delete_old_backups(bucket_name, s3_client, days_to_keep=7):
+@cli
+def delete_old_files(bucket_name: str = BUCKET_NAME, days_to_keep: int = 7):
     try:
+        s3_client = connect_to_s3()
         response = s3_client.list_objects_v2(Bucket=bucket_name)
         objects_to_delete = []
 
@@ -92,8 +97,7 @@ def delete_old_backups(bucket_name, s3_client, days_to_keep=7):
             obj_age = (datetime.now(obj_last_modified.tzinfo) - obj_last_modified).days
 
             # If the backup is older than the specified number of days, mark it for deletion
-            # FIXME:
-            if obj_age >= days_to_keep:
+            if obj_age > days_to_keep:
                 objects_to_delete.append({"Key": obj_key})
 
         if objects_to_delete:
@@ -101,30 +105,33 @@ def delete_old_backups(bucket_name, s3_client, days_to_keep=7):
                 Bucket=bucket_name,
                 Delete={"Objects": objects_to_delete}
             )
-            print(f"Deleted {len(objects_to_delete)} old backups")
+            print(f"Deleted {len(objects_to_delete)} old files")
         else:
-            print("No old backups found to delete")
+            print("No old files found to delete")
 
     except Exception as e:
-        print(f"An error occurred while deleting old backups: {str(e)}")
+        print(f"An error occurred while deleting old files: {str(e)}")
 
 
-s3_client = connect_to_s3()
-if s3_client is None:
-    exit(1)
-
-
-for database_name, dsn in DATABASES.items():
-    temp_dir, dump_file_path = create_database_dump(dsn)
-    if dump_file_path:
-        object_key = f"dashboard/{database_name}--{timestamp}.sql.gz"
-        upload_success = upload_file(dump_file_path, BUCKET_NAME, object_key, s3_client)
-        if upload_success:
-            list_bucket_contents(BUCKET_NAME, s3_client)
+@cli
+def backup(bucket_name: str = BUCKET_NAME):
+    """Backup databases to S3"""
+    print("Starting backup...")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    for database_name, dsn in DATABASES.items():
+        temp_dir, dump_file_path = create_database_dump(dsn)
+        if dump_file_path and temp_dir:
+            object_key = f"dashboard/{database_name}--{timestamp}.sql.gz"
+            upload_success = upload_file(dump_file_path, bucket_name, object_key)
+            if upload_success:
+                list_bucket_contents(bucket_name)
+            else:
+                print("Upload failed. Cleaning up temporary directory...")
+            cleanup_temp_directory(temp_dir)
         else:
-            print("Upload failed. Cleaning up temporary directory...")
-        cleanup_temp_directory(temp_dir)
-    else:
-        print("Failed to create database dump")
+            print("Failed to create database dump")
+    delete_old_files(bucket_name)
 
-delete_old_backups(BUCKET_NAME, s3_client, days_to_keep=0)
+
+if __name__ == "__main__":
+    run()

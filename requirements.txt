@@ -5,3 +5,4 @@ gevent
 Pillow
 boto3
 minicli
+sentry-sdk

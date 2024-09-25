@@ -1,0 +1,8 @@
+{
+  "cron": [
+    {
+      "command": "python cli.py backup",
+      "schedule": "42 4 * * *"
+    }
+  ]
+}
