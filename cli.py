@@ -30,7 +30,6 @@ def connect_to_s3():
         region_name="nl-ams",
         endpoint_url="https://s3.nl-ams.scw.cloud",
     )
-    print("Connected to S3 bucket")
     return s3
 
 
@@ -43,20 +42,31 @@ def list_bucket_contents(bucket_name: str = BUCKET_NAME):
         print(obj["Key"])
 
 
-def upload_file(local_file_path: Path, bucket_name: str, object_key: str) -> None:
+@cli
+def upload_dummy_file():
+    file_path = Path("/Users/alexandre/Captures d'écran/Capture d’écran 2024-09-25 à 16.36.03.png")
+    upload_file(file_path, BUCKET_NAME, "dashboard/aaa--bbb.sql.gz")
+
+
+def upload_file(local_file_path: Path, bucket_name: str, object_key: str) -> bool:
     s3_client = connect_to_s3()
     s3_client.upload_file(local_file_path, bucket_name, object_key)
     print("File uploaded successfully")
+    return True
 
 
-def create_database_dump(dsn: str) -> tuple[str | None, Path | None]:
+def create_database_dump(dsn: str, dummy_dump: bool = False) -> tuple[str | None, Path | None]:
     # Create a temporary directory for the dump file
     temp_dir = tempfile.mkdtemp()
-    dump_file_path = Path(temp_dir) / "database_dump.sql"
+    dump_file_path = Path(temp_dir) / "database_dump.sql.gz"
 
-    # Execute pg_dump command
-    command = f"pg_dump '{dsn}' | gzip > {dump_file_path}"
-    subprocess.run(command, shell=True, check=True)
+    if dummy_dump:
+        # create a dummy dump file in temp_dir
+        with open(dump_file_path, "w") as f:
+            f.write("dummy dump")
+    else:
+        command = f"pg_dump '{dsn}' | gzip > {dump_file_path}"
+        subprocess.run(command, shell=True, check=True)
 
     return temp_dir, dump_file_path
 
@@ -94,14 +104,14 @@ def delete_old_files(bucket_name: str = BUCKET_NAME, days_to_keep: int = 7):
 
 
 @cli
-def backup(bucket_name: str = BUCKET_NAME):
+def backup(bucket_name: str = BUCKET_NAME, dummy_dump: bool = False):
     """Backup databases to S3"""
     print("Starting backup...")
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     for database_name, dsn in DATABASES.items():
-        temp_dir, dump_file_path = create_database_dump(dsn)
+        object_key = f"dashboard/{database_name}--{timestamp}.sql.gz"
+        temp_dir, dump_file_path = create_database_dump(dsn, dummy_dump=dummy_dump)
         if dump_file_path and temp_dir:
-            object_key = f"dashboard/{database_name}--{timestamp}.sql.gz"
             upload_success = upload_file(dump_file_path, bucket_name, object_key)
             if upload_success:
                 list_bucket_contents(bucket_name)
