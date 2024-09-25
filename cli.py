@@ -23,14 +23,13 @@ BUCKET_NAME: str = "ecospheres-backups"
 
 
 def connect_to_s3():
-    s3 = boto3.client(
+    return boto3.client(
         "s3",
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
         region_name="nl-ams",
         endpoint_url="https://s3.nl-ams.scw.cloud",
     )
-    return s3
 
 
 @cli
