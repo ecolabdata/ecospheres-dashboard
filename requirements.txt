@@ -3,3 +3,5 @@ psycopg2-binary
 gunicorn
 gevent
 Pillow
+boto3
+minicli
