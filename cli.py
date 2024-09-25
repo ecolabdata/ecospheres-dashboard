@@ -60,7 +60,7 @@ def create_database_dump(dsn):
         dump_file_path = Path(temp_dir) / "database_dump.sql"
 
         # Execute pg_dump command
-        command = f"pg_dumpall '{dsn}' | gzip > {dump_file_path}"
+        command = f"pg_dump '{dsn}' | gzip > {dump_file_path}"
         subprocess.run(command, shell=True, check=True)
 
         return temp_dir, dump_file_path
@@ -90,10 +90,9 @@ for database_name, dsn in DATABASES.items():
         object_key = f"dashboard/{database_name}--{timestamp}.sql.gz"
         upload_success = upload_file(dump_file_path, BUCKET_NAME, object_key, s3_client)
         if upload_success:
-            cleanup_temp_directory(temp_dir)
             list_bucket_contents(BUCKET_NAME, s3_client)
         else:
             print("Upload failed. Cleaning up temporary directory...")
-            cleanup_temp_directory(temp_dir)
+        cleanup_temp_directory(temp_dir)
     else:
         print("Failed to create database dump")
