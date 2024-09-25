@@ -36,81 +36,61 @@ def connect_to_s3():
 
 @cli
 def list_bucket_contents(bucket_name: str = BUCKET_NAME):
-    try:
-        s3_client = connect_to_s3()
-        response = s3_client.list_objects_v2(Bucket=bucket_name)
-        print(f"Contents of {bucket_name}:")
-        for obj in response.get("Contents", []):
-            print(obj["Key"])
-    except Exception as e:
-        print(f"An error occurred while listing bucket contents: {str(e)}")
+    s3_client = connect_to_s3()
+    response = s3_client.list_objects_v2(Bucket=bucket_name)
+    print(f"Contents of {bucket_name}:")
+    for obj in response.get("Contents", []):
+        print(obj["Key"])
 
 
 def upload_file(local_file_path: Path, bucket_name: str, object_key: str) -> None:
-    try:
-        s3_client = connect_to_s3()
-        s3_client.upload_file(local_file_path, bucket_name, object_key)
-        print("File uploaded successfully")
-    except Exception as e:
-        print(f"An error occurred during upload: {str(e)}")
+    s3_client = connect_to_s3()
+    s3_client.upload_file(local_file_path, bucket_name, object_key)
+    print("File uploaded successfully")
 
 
 def create_database_dump(dsn: str) -> tuple[str | None, Path | None]:
-    try:
-        # Create a temporary directory for the dump file
-        temp_dir = tempfile.mkdtemp()
-        dump_file_path = Path(temp_dir) / "database_dump.sql"
+    # Create a temporary directory for the dump file
+    temp_dir = tempfile.mkdtemp()
+    dump_file_path = Path(temp_dir) / "database_dump.sql"
 
-        # Execute pg_dump command
-        command = f"pg_dump '{dsn}' | gzip > {dump_file_path}"
-        subprocess.run(command, shell=True, check=True)
+    # Execute pg_dump command
+    command = f"pg_dump '{dsn}' | gzip > {dump_file_path}"
+    subprocess.run(command, shell=True, check=True)
 
-        return temp_dir, dump_file_path
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred during database dump creation: {str(e)}")
-        return None, None
-    except Exception as e:
-        print(f"An unexpected error occurred: {str(e)}")
-        return None, None
+    return temp_dir, dump_file_path
 
 
 def cleanup_temp_directory(temp_dir: str):
-    try:
-        shutil.rmtree(temp_dir)
-        print("Temporary directory cleaned up successfully")
-    except Exception as e:
-        print(f"Failed to clean up temporary directory: {str(e)}")
+    shutil.rmtree(temp_dir)
+    print("Temporary directory cleaned up successfully")
 
 
 @cli
 def delete_old_files(bucket_name: str = BUCKET_NAME, days_to_keep: int = 7):
-    try:
-        s3_client = connect_to_s3()
-        response = s3_client.list_objects_v2(Bucket=bucket_name)
-        objects_to_delete = []
+    s3_client = connect_to_s3()
+    response = s3_client.list_objects_v2(Bucket=bucket_name)
+    objects_to_delete = []
 
-        for obj in response.get("Contents", []):
-            obj_key = obj["Key"]
-            obj_last_modified = obj["LastModified"]
+    for obj in response.get("Contents", []):
+        obj_key = obj["Key"]
+        obj_last_modified = obj["LastModified"]
 
-            # Calculate the age of the backup
-            obj_age = (datetime.now(obj_last_modified.tzinfo) - obj_last_modified).days
+        # Calculate the age of the backup
+        obj_age = (datetime.now(obj_last_modified.tzinfo) - obj_last_modified).days
 
-            # If the backup is older than the specified number of days, mark it for deletion
-            if obj_age > days_to_keep:
-                objects_to_delete.append({"Key": obj_key})
+        # If the backup is older than the specified number of days, mark it for deletion
+        if obj_age > days_to_keep:
+            objects_to_delete.append({"Key": obj_key})
 
-        if objects_to_delete:
-            s3_client.delete_objects(
-                Bucket=bucket_name,
-                Delete={"Objects": objects_to_delete}
-            )
-            print(f"Deleted {len(objects_to_delete)} old files")
-        else:
-            print("No old files found to delete")
-
-    except Exception as e:
-        print(f"An error occurred while deleting old files: {str(e)}")
+    if objects_to_delete:
+        s3_client.delete_objects(
+            Bucket=bucket_name,
+            Delete={"Objects": objects_to_delete}
+        )
+        print(f"Deleted {len(objects_to_delete)} old files")
+    else:
+        print("No old files found to delete")
 
 
 @cli
