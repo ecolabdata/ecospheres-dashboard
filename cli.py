@@ -14,7 +14,7 @@ from minicli import cli, run
 if sentry_dsn := os.getenv("SENTRY_DSN"):
     sentry_sdk.init(dsn=sentry_dsn)
 
-# thoses databases will be backuped and uploaded to S3
+# those databases will be backuped and uploaded to S3
 DATABASES: dict[str, str] = {
     "dashboard": os.getenv("DATABASE_URL", ""),
     "dashboard_backend": os.getenv("DOKKU_POSTGRES_AQUA_URL", ""),

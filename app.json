@@ -2,7 +2,7 @@
   "cron": [
     {
       "command": "python cli.py backup",
-      "schedule": "42 4 * * *"
+      "schedule": "42 22 * * *"
     }
   ]
 }
