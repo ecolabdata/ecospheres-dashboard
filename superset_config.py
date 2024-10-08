@@ -11,14 +11,15 @@ if not SQLALCHEMY_DATABASE_URI or not SECRET_KEY or not REDIS_URL:
 PUBLIC_ROLE_LIKE = "Gamma"
 
 # add caching like in https://github.com/apache/superset/blob/master/docker/pythonpath_dev/superset_config.py
-# FIXME: reenable after dev is done
-# CACHE_CONFIG = {
-#     "CACHE_TYPE": "RedisCache",
-#     "CACHE_DEFAULT_TIMEOUT": 300,
-#     "CACHE_KEY_PREFIX": "superset_",
-#     "CACHE_REDIS_URL": REDIS_URL,
-# }
-# DATA_CACHE_CONFIG = CACHE_CONFIG
+CACHE_CONFIG = {
+    "CACHE_TYPE": "RedisCache",
+    "CACHE_DEFAULT_TIMEOUT": 300,
+    "CACHE_KEY_PREFIX": "superset_",
+    "CACHE_REDIS_URL": REDIS_URL,
+}
+DATA_CACHE_CONFIG = CACHE_CONFIG
+
+### chartsgouv overrides ###
 
 BABEL_DEFAULT_LOCALE = "fr"
 
@@ -26,8 +27,6 @@ LANGUAGES = {
     "fr": {"flag": "fr", "name": "French"},
     "en": {"flag": "us", "name": "English"},
 }
-
-### chartsgouv overrides ###
 
 DSFR_COLORS = {
   "sun": {
