@@ -20,6 +20,7 @@ CACHE_CONFIG = {
 DATA_CACHE_CONFIG = CACHE_CONFIG
 
 ### chartsgouv overrides ###
+# from https://github.com/etalab-ia/chartsgouv/blob/75849df7faadb75a596f06884f1665ff80f75320/superset/docker/pythonpath_dev/superset_config_docker.py
 
 BABEL_DEFAULT_LOCALE = "fr"
 

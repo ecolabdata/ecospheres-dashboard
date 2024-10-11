@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 # from superset source code
+# https://github.com/apache/superset/blob/9c12b1c7dadf461c2cd88e7aa74f15337f9ad599/superset/app.py#L29
 def create_app(superset_config_module: Optional[str] = None) -> Flask:
     app = CustomSupersetApp(__name__)
 
@@ -42,6 +43,7 @@ class CustomSupersetApp(Flask):
     static_paths = [f"{superset.__path__[0]}/static"]
 
     # base fn extract from Flask's source code
+    # https://github.com/pallets/flask/blob/2fec0b206c6e83ea813ab26597e15c96fab08be7/src/flask/app.py#L301
     def send_static_file(self, filename):
         """Iterate over local static folder and superset's one when serving static file"""
         if not self.has_static_folder or not self.static_folder:

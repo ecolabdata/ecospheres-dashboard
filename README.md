@@ -18,9 +18,9 @@ dokku config:set SUPERSET_CONFIG_PATH=/app/superset_config.py FLASK_APP=superset
 
 On applique les personnalisations de https://github.com/etalab-ia/chartsgouv/, mais notre installation est basée sur Pypi plutôt que Docker. Il faut donc les adapter.
 
-`app.py` est un wrapper autour de `superset.app.Superset` qui permet de définir de spécifier :
-- le chemin "local" `templates` pour les surcharges de templates, ainsi que le chemin `templates` du package `superset`
-- le chemin "local" `static` pour les surcharges de templates, ainsi que le chemin `static` du package `superset`
+`app.py` est un wrapper autour de `superset.app.Superset` qui permet d'ajouter à l'application Flask les chemins suivants :
+- `./templates` en plus du chemin `templates` du package `superset`
+- `./static` en plus du chemin `static` du package `superset`
 
 Ce comportement n'est pas directement prévu par `Flask`, il faut donc attaquer les méthodes `send_static_file` et `jinja_loader`.
 
