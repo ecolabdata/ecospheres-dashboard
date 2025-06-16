@@ -6,4 +6,5 @@ Pillow
 boto3
 minicli
 sentry-sdk
+# https://github.com/apache/superset/issues/33162
 marshmallow<4
