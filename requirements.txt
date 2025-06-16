@@ -1,4 +1,4 @@
-apache-superset
+apache-superset==4.0.2
 psycopg2-binary
 gunicorn
 gevent
