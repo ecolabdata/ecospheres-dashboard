@@ -18,3 +18,8 @@ CACHE_CONFIG = {
     "CACHE_REDIS_URL": REDIS_URL,
 }
 DATA_CACHE_CONFIG = CACHE_CONFIG
+
+FEATURE_FLAGS = {
+    # Required to filter on array fields, see https://github.com/ecolabdata/ecospheres/issues/541
+    "ENABLE_TEMPLATE_PROCESSING": True,
+}
