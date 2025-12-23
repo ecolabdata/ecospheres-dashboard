@@ -1,4 +1,4 @@
-apache-superset==4.1.2
+apache-superset==6.0.0
 # https://github.com/apache/superset/issues/33162
 # when upgrading superset above, check that this is still needed
 # -> https://github.com/apache/superset/blob/master/requirements/base.txt
