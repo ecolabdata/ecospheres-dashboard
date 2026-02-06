@@ -1,4 +1,7 @@
 import os
+from pathlib import Path
+
+from flask import Response
 
 SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -23,3 +26,10 @@ FEATURE_FLAGS = {
     # Required to filter on array fields, see https://github.com/ecolabdata/ecospheres/issues/541
     "ENABLE_TEMPLATE_PROCESSING": True,
 }
+
+
+def FLASK_APP_MUTATOR(app):
+    @app.route("/robots.txt")
+    def robots():
+        robots_path = Path(__file__).parent / "robots.txt"
+        return Response(robots_path.read_text(), mimetype="text/plain")
